@@ -92,11 +92,32 @@ class BackgroundRemoverTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "bad inference"):
             remover.remove(Image.new("RGB", (10, 8)))
 
+    def test_keeps_largest_alpha_component_and_preserves_soft_edges(self):
+        output = Image.new("RGBA", (8, 6), (20, 100, 40, 0))
+        # Main foreground with a soft-alpha edge.
+        for y in range(1, 5):
+            for x in range(3, 7):
+                output.putpixel((x, y), (120, 80, 30, 200))
+        output.putpixel((3, 1), (120, 80, 30, 64))
+        # Disconnected false-positive island, including one pixel at threshold.
+        output.putpixel((0, 4), (20, 100, 40, 255))
+        output.putpixel((1, 4), (20, 100, 40, 10))
+
+        remover, _, _, _ = self.make_remover(Settings(), output)
+        result = remover.remove(Image.new("RGB", output.size))
+
+        self.assertEqual(result.getpixel((0, 4))[3], 0)
+        self.assertEqual(result.getpixel((1, 4))[3], 0)
+        self.assertEqual(result.getpixel((3, 1))[3], 64)
+        self.assertEqual(result.getpixel((6, 4))[3], 200)
+
     def test_invalid_matting_thresholds_are_rejected(self):
         with self.assertRaises(ValueError):
             replace(Settings(), alpha_foreground_threshold=270)
         with self.assertRaises(ValueError):
             replace(Settings(), alpha_background_threshold=240)
+        with self.assertRaises(ValueError):
+            replace(Settings(), foreground_component_alpha_threshold=255)
 
 
 if __name__ == "__main__":

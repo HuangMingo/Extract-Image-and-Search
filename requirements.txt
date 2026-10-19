@@ -1,6 +1,9 @@
 gradio>=5.0,<7
 numpy>=1.26,<3
+opencv-python>=4.6,<5
 Pillow>=10.0,<13
+pandas>=2.0,<4
+scikit-image>=0.22,<1
 rembg[cpu]>=2.0.67,<3
 ultralytics>=8.3,<9
 # YOLO-World text prompts require Ultralytics CLIP. Use the archive URL so

@@ -1,4 +1,4 @@
-# AnimalCut - ứng dụng tách nền ảnh động vật
+# AnimalCut - tách nền và tìm kiếm ảnh động vật
 
 Ứng dụng triển khai pipeline được mô tả trong báo cáo Nhóm 13:
 
@@ -30,12 +30,24 @@ Lần chạy đầu tiên cần Internet để tải `yolov8s-worldv2.pt` và ch
 python run.py
 ```
 
+Giao diện hiện tại là một trang truy vấn duy nhất. Chọn ảnh, điều chỉnh Top-K/metric nếu cần và nhấn **Trích xuất đặc trưng & tìm kiếm**. Kết quả được chia thành hai tab nội dung: danh sách ảnh tương đồng và chi tiết bốn vector/biểu đồ đặc trưng. Xem [FEATURE_UI_PROGRESS.md](FEATURE_UI_PROGRESS.md) để biết kiểm thử và hạn chế.
+
 Trình duyệt sẽ mở giao diện tại địa chỉ Gradio hiển thị trong terminal. Quy trình sử dụng:
 
 1. Chọn ảnh JPG, JPEG, PNG hoặc WEBP.
 2. Nhấn **Phát hiện động vật**.
 3. Nếu ảnh có nhiều động vật, chọn đúng đối tượng trong danh sách.
 4. Nhấn **Tách nền** rồi tải PNG.
+
+### Tìm kiếm ảnh tương đồng
+
+1. Mở tab **Tìm kiếm ảnh**.
+2. Chọn ảnh truy vấn. PNG đã có alpha sẽ được dùng trực tiếp; JPG hoặc ảnh còn nền được đưa qua YOLO-World và BiRefNet trước khi trích xuất đặc trưng.
+3. Chọn `Cosine similarity` hoặc `Khoảng cách L2`, sau đó chọn số kết quả Top-K.
+4. Nhấn **Tìm ảnh tương đồng**. Lần đầu hệ thống cần khoảng vài giây để lập chỉ mục 129 ảnh trong `public` và fit PCA 128 chiều.
+5. Xem ảnh đã chuẩn hóa 512×512, lưới kết quả và JSON chứa điểm tổng hợp, điểm PCA cùng bốn điểm thành phần.
+
+Pipeline tìm kiếm giữ đúng cấu hình báo cáo: HSV toàn mặt 288 chiều, HSV lưới 2×2 có 1.152 chiều, LBP lưới 4×4 có 160 chiều và HOG có 1.764 chiều. Vector hợp nhất có 3.364 chiều với trọng số tương ứng 0,15 / 0,25 / 0,25 / 0,35. Phiên bản local dùng chỉ mục trong bộ nhớ; PostgreSQL/pgvector là bước triển khai sau.
 
 ### Xử lý cả thư mục
 
@@ -103,6 +115,13 @@ Các test lõi không tải model: kiểm tra ảnh thật/ảnh hỏng, bbox c�
 ```text
 app/
   config/settings.py
+  search/
+    config.py
+    preprocess.py
+    extractors.py
+    pipeline.py
+    index.py
+    service.py
   services/detector.py
   services/background_remover.py
   services/image_processor.py
@@ -110,6 +129,7 @@ app/
   utils/validation.py
   ui.py
 tests/test_pipeline.py
+tests/test_search.py
 run.py
 ```
 

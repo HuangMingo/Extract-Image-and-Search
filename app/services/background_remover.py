@@ -7,6 +7,7 @@ from threading import Lock
 from PIL import Image
 
 from app.config import Settings
+from app.utils.image_utils import keep_largest_alpha_component
 
 LOGGER = logging.getLogger(__name__)
 
@@ -54,7 +55,10 @@ class BackgroundRemover:
                     raise RuntimeError("rembg không trả về ảnh PIL như mong đợi.")
                 if result.size != image.size:
                     raise RuntimeError("rembg trả về kích thước ảnh không hợp lệ.")
-                rgba = result.convert("RGBA")
+                rgba = keep_largest_alpha_component(
+                    result,
+                    self.settings.foreground_component_alpha_threshold,
+                )
         except (RuntimeError, ValueError, OSError) as exc:
             raise RuntimeError(f"Tách nền thất bại: {exc}") from exc
         if rgba.getchannel("A").getbbox() is None:

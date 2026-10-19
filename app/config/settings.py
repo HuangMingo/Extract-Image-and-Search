@@ -33,6 +33,9 @@ class Settings:
     alpha_background_threshold: int = parameters.ALPHA_BACKGROUND_THRESHOLD
     alpha_erode_size: int = parameters.ALPHA_ERODE_SIZE
     post_process_mask: bool = parameters.POST_PROCESS_MASK
+    foreground_component_alpha_threshold: int = (
+        parameters.FOREGROUND_COMPONENT_ALPHA_THRESHOLD
+    )
     decontaminate: bool = parameters.DECONTAMINATE
 
     output_directory: Path = field(
@@ -56,4 +59,8 @@ class Settings:
             raise ValueError("Alpha thresholds must satisfy 0 <= background < foreground < 255.")
         if self.alpha_erode_size < 0:
             raise ValueError("ALPHA_ERODE_SIZE must be non-negative.")
+        if not 0 <= self.foreground_component_alpha_threshold < 255:
+            raise ValueError(
+                "FOREGROUND_COMPONENT_ALPHA_THRESHOLD must be in [0, 255)."
+            )
 

@@ -3,10 +3,34 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 import numpy as np
+import cv2
 from PIL import Image, ImageDraw, ImageFont
 
 
 BBox = tuple[int, int, int, int]
+
+
+def keep_largest_alpha_component(
+    image: Image.Image,
+    alpha_threshold: int,
+) -> Image.Image:
+    """Remove disconnected alpha islands while preserving the original soft alpha."""
+    rgba = image.convert("RGBA")
+    pixels = np.asarray(rgba).copy()
+    alpha = pixels[:, :, 3]
+    binary_mask = (alpha > alpha_threshold).astype(np.uint8)
+
+    component_count, labels, stats, _ = cv2.connectedComponentsWithStats(
+        binary_mask,
+        connectivity=8,
+    )
+    if component_count <= 1:
+        pixels[:, :, 3] = 0
+        return Image.fromarray(pixels, mode="RGBA")
+
+    largest_label = 1 + int(np.argmax(stats[1:, cv2.CC_STAT_AREA]))
+    pixels[:, :, 3] = np.where(labels == largest_label, alpha, 0).astype(np.uint8)
+    return Image.fromarray(pixels, mode="RGBA")
 
 
 def expand_bbox(bbox: Sequence[float], image_size: tuple[int, int], padding: float) -> BBox:

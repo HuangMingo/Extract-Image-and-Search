@@ -24,6 +24,9 @@ ALPHA_BACKGROUND_THRESHOLD = 20
 ALPHA_ERODE_SIZE = 3
 # rembg post-processing hardens the mask; keep off to preserve fine fur.
 POST_PROCESS_MASK = False
+# Pixel alpha must be above this value to participate in connected-component
+# filtering. Keep it low so soft fur remains attached to the main subject.
+FOREGROUND_COMPONENT_ALPHA_THRESHOLD = 10
 # Remove background color fringing when alpha matting is disabled.
 # Requires a rembg version exposing the decontaminate argument.
 DECONTAMINATE = False
