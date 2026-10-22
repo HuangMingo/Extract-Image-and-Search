@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .config import DEFAULT_CONFIG, FEATURE_ORDER
+from .config import COMBINED_FEATURE_DIM, DEFAULT_CONFIG, FEATURE_ORDER
 from .models import FeatureResult
 
 
@@ -29,13 +29,13 @@ class LocalSearchIndex:
         matrix = np.asarray(combined, dtype=np.float32)
         if matrix.ndim != 2 or matrix.shape[0] != len(items) or len(items) < 2:
             raise ValueError("Chỉ mục cần ít nhất hai ảnh hợp lệ.")
-        if matrix.shape[1] != 3364 or not np.all(np.isfinite(matrix)):
+        if matrix.shape[1] != COMBINED_FEATURE_DIM or not np.all(np.isfinite(matrix)):
             raise ValueError("Ma trận vector chỉ mục không hợp lệ.")
         self.items = items
         self.groups = {
             name: np.asarray(groups[name], dtype=np.float32) for name in FEATURE_ORDER
         }
-        self.input_dimension = 3364
+        self.input_dimension = COMBINED_FEATURE_DIM
         self.mean = matrix.mean(axis=0, dtype=np.float64).astype(np.float32)
         centered = matrix - self.mean
 
@@ -73,7 +73,9 @@ class LocalSearchIndex:
     def _transform_pca(self, vector: np.ndarray) -> np.ndarray:
         value = np.asarray(vector, dtype=np.float32).reshape(-1)
         if value.size != self.input_dimension:
-            raise ValueError("Vector truy vấn không đủ 3364 chiều.")
+            raise ValueError(
+                f"Vector truy vấn phải có {self.input_dimension} chiều."
+            )
         return ((value - self.mean) @ self.components.T).astype(np.float32)
 
     def search(
@@ -84,7 +86,7 @@ class LocalSearchIndex:
         metric: str = "cosine",
     ) -> dict:
         if query.combined is None:
-            raise ValueError("Ảnh truy vấn không tạo đủ bốn nhóm đặc trưng.")
+            raise ValueError("Ảnh truy vấn không tạo đủ các nhóm đặc trưng.")
         selected_metric = metric if metric in {"cosine", "euclidean"} else "cosine"
         fallback_used = selected_metric != metric
         top_k = max(1, min(int(top_k), 30, len(self.items)))

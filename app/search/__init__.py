@@ -1,4 +1,5 @@
-from .config import DEFAULT_CONFIG, FEATURE_DIMS, FEATURE_ORDER
+from .artifacts import save_hog_visualization
+from .config import COMBINED_FEATURE_DIM, DEFAULT_CONFIG, FEATURE_DIMS, FEATURE_ORDER
 from .index import LocalSearchIndex, SearchItem
 from .pipeline import extract_features
 from .preprocess import PreprocessError, prepare_image
@@ -8,6 +9,7 @@ from .service import ImageSearchService, SearchOutput, standardize_rgba
 __all__ = [
     "DEFAULT_CONFIG",
     "FEATURE_DIMS",
+    "COMBINED_FEATURE_DIM",
     "FEATURE_ORDER",
     "FeatureChart",
     "ImageSearchService",
@@ -19,5 +21,6 @@ __all__ = [
     "build_all_feature_charts",
     "build_feature_chart",
     "prepare_image",
+    "save_hog_visualization",
     "standardize_rgba",
 ]

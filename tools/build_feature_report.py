@@ -290,18 +290,18 @@ def build() -> None:
     info = doc.add_paragraph()
     info.alignment = WD_ALIGN_PARAGRAPH.CENTER
     info.paragraph_format.space_before = Pt(22)
-    r = info.add_run("Ngày lập báo cáo 19 tháng 10 năm 2026")
+    r = info.add_run("Ngày cập nhật báo cáo 20 tháng 10 năm 2026")
     set_run_font(r, size=10, color=MUTED)
     doc.add_page_break()
 
     add_heading(doc, "Tóm tắt kết quả", 1)
     add_body(
         doc,
-        "Repository triển khai đúng bốn nhóm đặc trưng thủ công cho ảnh động vật đã tách nền: histogram HSV toàn cục, histogram HSV theo lưới 2×2, LBP theo lưới 4×4 và HOG. Bốn vector có số chiều lần lượt là 288, 1.152, 160 và 1.764. Sau chuẩn hóa L2, chúng được nhân căn bậc hai của trọng số rồi ghép thành vector 3.364 chiều. HOG nhận trọng số lớn nhất 0,35; hai đặc trưng không gian HSV và LBP cùng nhận 0,25; HSV toàn cục nhận 0,15.",
+        "Repository triển khai năm nhóm đặc trưng thủ công cho ảnh động vật đã tách nền: histogram HSV toàn cục, histogram HSV theo lưới 2×2, LBP theo lưới 4×4, HOG và Gabor không gian theo lưới 4×4. Năm vector có số chiều lần lượt là 288, 1.152, 160, 1.764 và 512. Sau chuẩn hóa L2, chúng được nhân căn bậc hai của trọng số rồi ghép thành vector 3.876 chiều. Gabor nhận trọng số lớn nhất 0,50 để ưu tiên cấu trúc texture đa tỉ lệ và đa hướng; tổng trọng số của hai đặc trưng HSV là 0,20.",
     )
     add_body(
         doc,
-        f"Lần chạy minh họa trên {DETAILS['index']['images']} ảnh hợp lệ tạo PCA {DETAILS['pca_dimension']} chiều. Truy vấn tiger_001.png dùng trực tiếp alpha sẵn có và hoàn thành trong {DETAILS['elapsed_seconds']:.3f} giây, bao gồm thời gian lập chỉ mục lần đầu. Ảnh truy vấn đứng hạng 1 với điểm 1,000000; bốn vị trí tiếp theo đều là ảnh hổ. Kết quả này xác nhận đường đi từ ảnh RGBA qua bốn bộ trích xuất, ghép vector, PCA và xếp hạng hoạt động đồng bộ.",
+        f"Lần chạy minh họa trên {DETAILS['index']['images']} ảnh hợp lệ tạo PCA {DETAILS['pca_dimension']} chiều. Truy vấn tiger_001.png dùng trực tiếp alpha sẵn có và hoàn thành trong {DETAILS['elapsed_seconds']:.3f} giây, bao gồm thời gian lập chỉ mục lần đầu. Ảnh truy vấn đứng hạng 1 với điểm 1,000000. Kết quả xác nhận đường đi từ ảnh RGBA qua năm bộ trích xuất, ghép vector, PCA và xếp hạng hoạt động đồng bộ.",
     )
 
     add_heading(doc, "Phạm vi báo cáo", 1)
@@ -313,10 +313,11 @@ def build() -> None:
         doc,
         ["Nhóm", "Kích thước đầu vào", "Cấu hình chính", "Số chiều", "Trọng số"],
         [
-            ["HSV toàn cục", "RGB 512×512 và alpha", "18×4×4 bins", "288", "0,15"],
-            ["HSV lưới", "RGB 512×512 và alpha", "Lưới 2×2; 288 bins mỗi vùng", "1.152", "0,25"],
-            ["LBP lưới", "Gray 128×128 và mask", "P=8, R=1, uniform; lưới 4×4", "160", "0,25"],
-            ["HOG", "Gray 128×128", "9 hướng; cell 16×16; block 2×2", "1.764", "0,35"],
+            ["HSV toàn cục", "RGB 512×512 và alpha", "18×4×4 bins", "288", "0,05"],
+            ["HSV lưới", "RGB 512×512 và alpha", "Lưới 2×2; 288 bins mỗi vùng", "1.152", "0,15"],
+            ["LBP lưới", "Gray 128×128 và mask", "P=8, R=1, uniform; lưới 4×4", "160", "0,15"],
+            ["HOG", "Gray 128×128", "9 hướng; cell 16×16; block 2×2", "1.764", "0,15"],
+            ["Gabor lưới", "Gray 128×128 và mask", "4 bước sóng; 4 hướng; lưới 4×4", "512", "0,50"],
         ],
         [2.6, 3.2, 6.2, 2.0, 1.8],
     )
@@ -373,18 +374,33 @@ def build() -> None:
     add_formula(doc, "dHOG = 7 × 7 × 2 × 2 × 9 = 1.764")
     add_body(
         doc,
-        "Tensor HOG được làm phẳng theo đúng thứ tự mà thư viện trả về, rồi chuẩn hóa L2 ở cấp toàn vector. Trong pipeline hiện tại, HOG nhận trọng số cao nhất vì cung cấp thông tin hình dáng và biên định hướng của đối tượng.",
+        "Tensor HOG được làm phẳng theo đúng thứ tự mà thư viện trả về, rồi chuẩn hóa L2 ở cấp toàn vector. HOG cung cấp thông tin hình dáng và biên định hướng của đối tượng với trọng số 0,15.",
     )
 
-    add_figure(doc, "02_vector_dac_trung.png", "Hình 2  Bốn vector L2 trích xuất từ tiger_001.png", width=6.3)
+    add_heading(doc, "Gabor đa tỉ lệ theo lưới 4×4", 1)
+    add_body(
+        doc,
+        "Bộ mô tả Gabor dùng ảnh xám 128×128 với bốn bước sóng 4, 8, 16 và 32 pixel cùng bốn hướng 0, 45, 90 và 135 độ. Mỗi kernel có kích thước 21×21, sigma bằng 0,56 lần bước sóng và gamma bằng 0,5. Kernel được trừ trung bình và chuẩn hóa trước phép lọc để giảm thành phần một chiều và cân bằng đáp ứng giữa các thang đo.",
+    )
+    add_body(
+        doc,
+        "Alpha mask được co bằng kernel 21×21 trước khi thống kê nhằm loại vùng mà cửa sổ Gabor có thể chạm nền trong suốt. Ảnh được chia thành 16 vùng; với mỗi tổ hợp bước sóng và hướng, hệ thống lấy trung bình và độ lệch chuẩn của trị tuyệt đối đáp ứng lọc trong foreground. Vì vậy mỗi vùng có 4×4×2 = 32 giá trị.",
+    )
+    add_formula(doc, "dGabor = 4 × 4 vùng × 4 bước sóng × 4 hướng × 2 thống kê = 512")
+    add_body(
+        doc,
+        "Gabor mô tả phân bố năng lượng texture chứ không trực tiếp đếm đốm. Lông sói và đốm báo có thể tạo phổ texture gần nhau; do đó điểm Gabor phải được hiểu là độ tương đồng về tần số và hướng, không phải xác suất hai ảnh thuộc cùng loài.",
+    )
+
+    add_figure(doc, "02_vector_dac_trung.png", "Hình 2  Năm vector L2 trích xuất từ tiger_001.png", width=6.3)
 
     add_heading(doc, "Ghép vector và chuẩn hóa trọng số", 1)
     add_body(
         doc,
-        "Chỉ khi cả bốn vector hợp lệ, pipeline mới tạo vector kết hợp. Với mỗi nhóm i, vector L2 fi được nhân với căn bậc hai của trọng số wi rồi ghép nối. Cách nhân căn bậc hai làm cho tích vô hướng giữa hai vector kết hợp bằng tổng có trọng số của bốn độ tương đồng cosine thành phần.",
+        "Chỉ khi cả năm vector hợp lệ, pipeline mới tạo vector kết hợp. Với mỗi nhóm i, vector L2 fi được nhân với căn bậc hai của trọng số wi rồi ghép nối. Cách nhân căn bậc hai làm cho tích vô hướng giữa hai vector kết hợp bằng tổng có trọng số của năm độ tương đồng cosine thành phần.",
     )
-    add_formula(doc, "F = [√0,15 fHSV; √0,25 fHSV2×2; √0,25 fLBP; √0,35 fHOG]")
-    add_formula(doc, "dF = 288 + 1.152 + 160 + 1.764 = 3.364")
+    add_formula(doc, "F = [√0,05 fHSV; √0,15 fHSV2×2; √0,15 fLBP; √0,15 fHOG; √0,50 fGabor]")
+    add_formula(doc, "dF = 288 + 1.152 + 160 + 1.764 + 512 = 3.876")
     add_body(
         doc,
         "Vì từng fi có norm bằng 1 và tổng trọng số bằng 1, norm của F cũng bằng 1 trong trường hợp mọi nhóm hợp lệ. Mã nguồn kiểm tra kích thước, tính hữu hạn và giá trị không âm trước khi cho vector tham gia tìm kiếm.",
@@ -393,13 +409,19 @@ def build() -> None:
     add_heading(doc, "PCA và cách xếp hạng", 1)
     add_body(
         doc,
-        "Chỉ mục cục bộ fit PCA trực tiếp trên các vector 3.364 chiều. Để tránh phân rã ma trận rất rộng, mã nguồn tính ma trận Gram theo số ảnh, phân rã trị riêng rồi dựng các trục thành phần chính. Số chiều tối đa là 128, đồng thời không vượt quá số ảnh trừ một và số trị riêng có phương sai đáng kể. Lần chạy minh họa đạt đủ 128 chiều.",
+        "Chỉ mục cục bộ fit PCA trực tiếp trên các vector 3.876 chiều. Để tránh phân rã ma trận rất rộng, mã nguồn tính ma trận Gram theo số ảnh, phân rã trị riêng rồi dựng các trục thành phần chính. Số chiều tối đa là 128, đồng thời không vượt quá số ảnh trừ một và số trị riêng có phương sai đáng kể. Lần chạy minh họa đạt đủ 128 chiều.",
     )
     add_body(
         doc,
-        "Điểm xếp hạng chính không lấy trực tiếp từ PCA. Với cosine, hệ thống tính độ tương đồng riêng cho từng nhóm đã chuẩn hóa L2 rồi cộng theo trọng số 0,15, 0,25, 0,25 và 0,35. Với khoảng cách Euclid, mỗi khoảng cách thành phần d được đổi thành 1/(1+d) trước khi cộng trọng số. PCA cung cấp pca_similarity và được dùng làm khóa phụ khi các điểm tổng hợp bằng nhau.",
+        "Điểm xếp hạng chính không lấy trực tiếp từ PCA. Với cosine, hệ thống tính độ tương đồng riêng cho từng nhóm đã chuẩn hóa L2 rồi cộng theo trọng số 0,05, 0,15, 0,15, 0,15 và 0,50. Với khoảng cách Euclid, mỗi khoảng cách thành phần d được đổi thành 1/(1+d) trước khi cộng trọng số. PCA cung cấp pca_similarity và được dùng làm khóa phụ khi các điểm tổng hợp bằng nhau.",
     )
-    add_formula(doc, "score = 0,15 sHSV + 0,25 sHSV2×2 + 0,25 sLBP + 0,35 sHOG")
+    add_formula(doc, "score = 0,05 sHSV + 0,15 sHSV2×2 + 0,15 sLBP + 0,15 sHOG + 0,50 sGabor")
+
+    add_heading(doc, "Metadata đường dẫn đầu vào", 1)
+    add_body(
+        doc,
+        "Báo cáo JSON trả về thuộc tính input_file. Khi đầu vào là đường dẫn thật được truyền trực tiếp cho chương trình, giá trị này giữ nguyên đường dẫn tuyệt đối. Khi người dùng tải ảnh qua trình duyệt, Gradio chỉ cung cấp một bản sao tạm và không tiết lộ đường dẫn gốc trên máy khách; ứng dụng vì vậy lưu một bản sao ổn định theo mã nội dung trong thư mục input_files rồi báo cáo đường dẫn của bản sao đó.",
+    )
 
     add_heading(doc, "Kết quả chạy repository", 1)
     add_body(
@@ -425,29 +447,29 @@ def build() -> None:
     add_bullets(
         doc,
         [
-            "Ảnh truy vấn xuất hiện ở hạng 1 với điểm 1,000000 cho cả bốn thành phần, phù hợp với kiểm thử self query của chỉ mục.",
-            "Bốn kết quả tiếp theo đều thuộc nhóm tiger. Điểm LBP của chúng từ 0,957137 đến 0,987077, cao hơn phần lớn điểm màu; họa tiết cục bộ góp phần ổn định nhận dạng các ảnh hổ.",
-            "HOG của các hạng 3 đến 5 nằm trong khoảng 0,868596 đến 0,887257 và có trọng số 0,35, nên hình dáng và hướng biên ảnh hưởng lớn tới thứ hạng cuối.",
-            "PCA similarity giảm từ 0,718909 ở hạng 2 xuống 0,669061 ở hạng 5, nhưng thứ tự chính vẫn do tổng điểm bốn nhóm quyết định.",
+            "Ảnh truy vấn xuất hiện ở hạng 1 với điểm 1,000000 cho cả năm thành phần, phù hợp với kiểm thử self query của chỉ mục.",
+            "Các kết quả tiếp theo được xếp theo tổng có trọng số của năm nhóm; Gabor đóng góp lớn nhất với trọng số 0,50, còn tổng hai đặc trưng HSV đóng góp 0,20.",
+            "Điểm Gabor cao thể hiện phân bố năng lượng texture tương tự, nhưng không bảo đảm hai ảnh có cùng loại đốm hoặc cùng nhãn động vật. Đây là giới hạn cần lưu ý khi diễn giải kết quả gần nhau giữa báo tuyết và sói.",
+            "PCA similarity chỉ được dùng làm khóa phụ khi điểm tổng hợp bằng nhau; thứ tự chính vẫn do tổng điểm năm nhóm quyết định.",
         ],
     )
 
     add_heading(doc, "Đảm bảo tính nhất quán", 1)
     add_body(
         doc,
-        "Mã nguồn cố định thứ tự ghép là hsv_global, hsv_spatial, lbp_spatial, hog và lưu fingerprint của cấu hình. Bộ kiểm thử xác nhận đúng bốn kích thước, vector kết hợp 3.364 chiều có norm xấp xỉ 1, biểu đồ đọc đúng vector L2, dữ liệu NaN hoặc Infinity bị từ chối, và truy vấn chính nó đứng hạng đầu. Khi chạy toàn bộ repository trong lần lập báo cáo, 25 trên 25 kiểm thử đều đạt.",
+        "Mã nguồn cố định thứ tự ghép là hsv_global, hsv_spatial, lbp_spatial, hog, gabor_spatial và lưu fingerprint của cấu hình. Bộ kiểm thử xác nhận đúng năm kích thước, vector kết hợp 3.876 chiều có norm xấp xỉ 1, Gabor hữu hạn và chuẩn hóa đúng, biểu đồ đọc đúng vector L2, dữ liệu NaN hoặc Infinity bị từ chối, truy vấn chính nó đứng hạng đầu, và file tạm Gradio được sao chép sang đường dẫn ổn định. Khi cập nhật báo cáo, 27 trên 27 kiểm thử đều đạt.",
     )
 
     add_heading(doc, "Kết luận", 1)
     add_body(
         doc,
-        "Pipeline tìm kiếm của Animal Image Search kết hợp màu sắc, bố cục màu, vi cấu trúc và hình dạng trong một biểu diễn 3.364 chiều. Thiết kế dùng alpha mask để hạn chế nền, L2 để đưa các nhóm về cùng thang đo và trọng số để ưu tiên HOG cùng hai đặc trưng không gian. PCA 128 chiều hỗ trợ biểu diễn chỉ mục và khóa phụ, còn điểm xếp hạng cuối vẫn giữ khả năng giải thích qua bốn điểm thành phần.",
+        "Pipeline tìm kiếm của Animal Image Search kết hợp màu sắc, bố cục màu, vi cấu trúc, hình dạng và texture đa tỉ lệ trong một biểu diễn 3.876 chiều. Thiết kế dùng alpha mask để hạn chế nền, L2 để đưa các nhóm về cùng thang đo và trọng số 0,50 để ưu tiên Gabor. PCA 128 chiều hỗ trợ biểu diễn chỉ mục và khóa phụ, còn điểm xếp hạng cuối vẫn giữ khả năng giải thích qua năm điểm thành phần. Gabor cải thiện mô tả hoa văn nhưng không thay thế đặc trưng blob chuyên biệt hoặc bước phân loại theo nhãn.",
     )
 
     doc.core_properties.title = "Trích xuất đặc trưng và tìm kiếm ảnh trong Animal Image Search"
     doc.core_properties.subject = "Báo cáo kỹ thuật dựa trên mã nguồn và kết quả chạy repository"
     doc.core_properties.author = ""
-    doc.core_properties.keywords = "HSV, LBP, HOG, PCA, tìm kiếm ảnh"
+    doc.core_properties.keywords = "HSV, LBP, HOG, Gabor, PCA, tìm kiếm ảnh"
     doc.save(OUT)
     print("output/documents/Bao_cao_trich_xuat_dac_trung_Animal_Image_Search.docx")
 

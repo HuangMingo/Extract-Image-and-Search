@@ -12,8 +12,10 @@ import numpy as np
 from PIL import Image, ImageOps
 
 from app.utils.image_utils import resize_and_center
+from app.utils.input_files import preserve_uploaded_input
 from app.utils.validation import ImageValidationError, load_validated_image
 
+from .artifacts import save_hog_visualization
 from .config import FEATURE_ORDER
 from .index import LocalSearchIndex, SearchItem
 from .models import FeatureResult
@@ -54,6 +56,9 @@ def standardize_rgba(image: Image.Image) -> Image.Image:
 class ImageSearchService:
     def __init__(self, database_root: Path) -> None:
         self.database_root = database_root
+        self.hog_output_directory = (
+            database_root.resolve().parent / "output" / "hog extract"
+        )
         self._index: LocalSearchIndex | None = None
         self._lock = Lock()
 
@@ -128,18 +133,25 @@ class ImageSearchService:
             load_validated_image(source, processor.settings)
         except ImageValidationError as exc:
             raise ValueError(str(exc)) from exc
-        if self._has_useful_alpha(source):
-            with Image.open(source) as opened:
+        input_file = preserve_uploaded_input(
+            source, processor.settings.output_directory
+        )
+        if self._has_useful_alpha(input_file):
+            with Image.open(input_file) as opened:
                 query_image = standardize_rgba(opened)
             preprocessing = "existing_alpha"
         else:
-            detected = processor.detect(source)
+            detected = processor.detect(input_file)
             removed = processor.process_detection(detected, selected_index=0)
             query_image = standardize_rgba(removed.output)
             preprocessing = removed.metadata.get("detection_method", "yolo_rembg")
 
-        features = extract_features(
-            prepare_image(np.asarray(query_image, dtype=np.uint8))
+        prepared = prepare_image(np.asarray(query_image, dtype=np.uint8))
+        features = extract_features(prepared)
+        save_hog_visualization(
+            prepared,
+            self.hog_output_directory,
+            Path(input_file).stem,
         )
         index = self.get_index()
         response = index.search(features, top_k=top_k, metric=metric)
@@ -152,6 +164,7 @@ class ImageSearchService:
         ]
         details = {
             "success": True,
+            "input_file": str(input_file),
             "preprocessing": preprocessing,
             "query_size": [512, 512],
             "feature_dimension": int(features.combined.size) if features.combined is not None else 0,

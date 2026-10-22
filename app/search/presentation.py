@@ -15,6 +15,7 @@ FEATURE_TITLES = {
     "hsv_spatial": "Spatial Color Histogram · HSV 2×2",
     "lbp_spatial": "LBP Histogram · lưới 4×4",
     "hog": "HOG · Histogram of Oriented Gradients",
+    "gabor_spatial": "Gabor Texture · lưới 4×4",
 }
 
 
@@ -71,6 +72,14 @@ def _parameters(name: str, config: FeatureConfig) -> str:
             f"pixels/cell={config.hog_pixels_per_cell}; cells/block={config.hog_cells_per_block}; "
             f"block norm={config.hog_block_norm}; transform_sqrt={config.hog_transform_sqrt}"
         )
+    if name == "gabor_spatial":
+        return (
+            f"gray {config.gray_size}×{config.gray_size}; lưới "
+            f"{config.gabor_rows}×{config.gabor_cols}; wavelengths="
+            f"{config.gabor_wavelengths}; orientations={config.gabor_orientations}; "
+            f"kernel={config.gabor_kernel_size}×{config.gabor_kernel_size}; "
+            "thống kê mean/std trên alpha mask đã co"
+        )
     raise KeyError(name)
 
 
@@ -83,9 +92,13 @@ def _region_labels(name: str, length: int, config: FeatureConfig) -> list[str]:
             f"(r{index // per_region // cols + 1}, c{index // per_region % cols + 1})"
             for index in range(length)
         ]
-    if name == "lbp_spatial":
-        per_region = config.lbp_bins
-        cols = config.lbp_cols
+    if name in {"lbp_spatial", "gabor_spatial"}:
+        per_region = (
+            config.lbp_bins
+            if name == "lbp_spatial"
+            else len(config.gabor_wavelengths) * config.gabor_orientations * 2
+        )
+        cols = config.lbp_cols if name == "lbp_spatial" else config.gabor_cols
         return [
             f"Vùng {index // per_region + 1} "
             f"(r{index // per_region // cols + 1}, c{index // per_region % cols + 1})"
@@ -111,7 +124,7 @@ def build_feature_chart(
         "Chỉ số": indices,
         "Giá trị": shown,
     }
-    if feature.name in {"hsv_spatial", "lbp_spatial"}:
+    if feature.name in {"hsv_spatial", "lbp_spatial", "gabor_spatial"}:
         data["Vùng"] = _region_labels(feature.name, dimension, config)[start:stop]
     dataframe = pd.DataFrame(data)
 

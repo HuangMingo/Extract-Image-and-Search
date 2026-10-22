@@ -5,18 +5,21 @@ import hashlib
 import json
 from typing import Mapping
 
-FEATURE_ORDER = ("hsv_global", "hsv_spatial", "lbp_spatial", "hog")
+FEATURE_ORDER = ("hsv_global", "hsv_spatial", "lbp_spatial", "hog", "gabor_spatial")
 FEATURE_DIMS = {
     "hsv_global": 288,
     "hsv_spatial": 1152,
     "lbp_spatial": 160,
     "hog": 1764,
+    "gabor_spatial": 512,
 }
+
+COMBINED_FEATURE_DIM = sum(FEATURE_DIMS.values())
 
 
 @dataclass(frozen=True)
 class FeatureConfig:
-    """Cấu hình bốn bộ mô tả trong báo cáo Mục 2."""
+    """Cấu hình các bộ mô tả dùng cho tìm kiếm ảnh động vật."""
 
     config_version: str = "animal-face-v1"
     schema_version: str = "animal-feature-result-v1"
@@ -43,13 +46,21 @@ class FeatureConfig:
     hog_cells_per_block: tuple[int, int] = (2, 2)
     hog_block_norm: str = "L2-Hys"
     hog_transform_sqrt: bool = False
+    gabor_rows: int = 4
+    gabor_cols: int = 4
+    gabor_wavelengths: tuple[float, ...] = (4.0, 8.0, 16.0, 32.0)
+    gabor_orientations: int = 4
+    gabor_kernel_size: int = 21
+    gabor_sigma_ratio: float = 0.56
+    gabor_gamma: float = 0.5
     background_gray: int = 0
     l2_eps: float = 1e-12
     weights: tuple[tuple[str, float], ...] = (
-        ("hsv_global", 0.15),
-        ("hsv_spatial", 0.25),
-        ("lbp_spatial", 0.25),
-        ("hog", 0.35),
+        ("hsv_global", 0.05),
+        ("hsv_spatial", 0.15),
+        ("lbp_spatial", 0.15),
+        ("hog", 0.15),
+        ("gabor_spatial", 0.50),
     )
 
     def as_dict(self) -> dict:

@@ -22,7 +22,7 @@ from app.search.service import ImageSearchService
 
 
 OUT = ROOT / "output" / "report_assets"
-QUERY = ROOT / "public" / "tiger" / "tiger_001.png"
+QUERY = ROOT / "public" / "tiger remove" / "tiger_001.png"
 
 
 def checkerboard(width: int, height: int, square: int = 20) -> Image.Image:
@@ -76,7 +76,7 @@ def save_preprocessing(query: Image.Image, result) -> None:
     axes[1].imshow(alpha, cmap="gray", vmin=0, vmax=255)
     axes[1].set_title("Alpha mask dùng để chọn foreground")
     axes[2].imshow(gray128, cmap="gray", vmin=0, vmax=255)
-    axes[2].set_title("Ảnh xám 128×128 cho LBP và HOG")
+    axes[2].set_title("Ảnh xám 128×128 cho LBP, HOG và Gabor")
     for ax in axes:
         ax.axis("off")
     fig.savefig(OUT / "01_tien_xu_ly.png", dpi=180, bbox_inches="tight")
@@ -85,12 +85,13 @@ def save_preprocessing(query: Image.Image, result) -> None:
 
 def save_feature_vectors(feature_result) -> None:
     vectors = {name: feature_result.features[name].l2_values for name in FEATURE_ORDER}
-    fig, axes = plt.subplots(2, 2, figsize=(11.6, 7.3), constrained_layout=True)
+    fig, axes = plt.subplots(3, 2, figsize=(11.6, 10.2), constrained_layout=True)
     specifications = [
         ("hsv_global", "HSV toàn cục · 288 chiều", "#2563EB", "bar"),
         ("hsv_spatial", "HSV lưới 2×2 · 1.152 chiều", "#0F766E", "line"),
         ("lbp_spatial", "LBP lưới 4×4 · 160 chiều", "#D97706", "bar"),
         ("hog", "HOG · 1.764 chiều", "#7C3AED", "line"),
+        ("gabor_spatial", "Gabor lưới 4×4 · 512 chiều", "#DC2626", "line"),
     ]
     for ax, (name, title, color, kind) in zip(axes.ravel(), specifications):
         values = vectors[name]
@@ -103,6 +104,7 @@ def save_feature_vectors(feature_result) -> None:
         ax.set_xlabel("Chỉ số phần tử")
         ax.set_ylabel("Giá trị sau chuẩn hóa L2")
         ax.set_xlim(0, max(1, values.size - 1))
+    axes.ravel()[-1].axis("off")
     fig.savefig(OUT / "02_vector_dac_trung.png", dpi=180, bbox_inches="tight")
     plt.close(fig)
 
@@ -130,15 +132,15 @@ def save_search_montage(query: Image.Image, details: dict) -> None:
 def save_component_scores(details: dict) -> None:
     matches = details["matches"][1:]
     labels = [f"#{m['rank']} {Path(m['source']).stem}" for m in matches]
-    names = ["hsv_global", "hsv_spatial", "lbp_spatial", "hog"]
-    display = ["HSV toàn cục", "HSV 2×2", "LBP 4×4", "HOG"]
-    colors = ["#2563EB", "#0F766E", "#D97706", "#7C3AED"]
+    names = ["hsv_global", "hsv_spatial", "lbp_spatial", "hog", "gabor_spatial"]
+    display = ["HSV toàn cục", "HSV 2×2", "LBP 4×4", "HOG", "Gabor 4×4"]
+    colors = ["#2563EB", "#0F766E", "#D97706", "#7C3AED", "#DC2626"]
     x = np.arange(len(labels))
-    width = 0.18
+    width = 0.15
     fig, ax = plt.subplots(figsize=(11.6, 4.5), constrained_layout=True)
     for idx, (name, title, color) in enumerate(zip(names, display, colors)):
         ax.bar(
-            x + (idx - 1.5) * width,
+            x + (idx - 2.0) * width,
             [m["components"][name] for m in matches],
             width,
             label=title,
@@ -148,8 +150,8 @@ def save_component_scores(details: dict) -> None:
     ax.set_xticks(x, labels)
     ax.set_ylim(0.6, 1.02)
     ax.set_ylabel("Độ tương đồng")
-    ax.set_title("Điểm thành phần và điểm tổng hợp của bốn kết quả khác ảnh truy vấn")
-    ax.legend(ncol=5, loc="lower center", bbox_to_anchor=(0.5, -0.28), frameon=False)
+    ax.set_title("Điểm thành phần và điểm tổng hợp của các kết quả khác ảnh truy vấn")
+    ax.legend(ncol=6, loc="lower center", bbox_to_anchor=(0.5, -0.28), frameon=False)
     fig.savefig(OUT / "04_diem_thanh_phan.png", dpi=180, bbox_inches="tight")
     plt.close(fig)
 

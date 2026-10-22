@@ -15,6 +15,7 @@ from PIL import Image
 from app.config import Settings
 from app.services.detector import Detection
 from app.utils.image_utils import center_without_resize, draw_detections, expand_bbox
+from app.utils.input_files import preserve_uploaded_input
 from app.utils.validation import ImageValidationError, load_validated_image
 
 LOGGER = logging.getLogger(__name__)
@@ -56,6 +57,7 @@ class ProcessingResult:
 class BatchItemResult:
     source_name: str
     success: bool
+    input_file: str | None = None
     saved_path: Path | None = None
     metadata: dict[str, Any] | None = None
     error_code: str | None = None
@@ -66,6 +68,8 @@ class BatchItemResult:
             "source_name": self.source_name,
             "success": self.success,
         }
+        if self.input_file is not None:
+            result["input_file"] = self.input_file
         if self.saved_path is not None:
             result["saved_path"] = str(self.saved_path)
         if self.metadata is not None:
@@ -215,7 +219,8 @@ class ImageProcessor:
             source_path = Path(source)
             source_name = source_path.name
             try:
-                detected = self.detect(source_path)
+                input_file = preserve_uploaded_input(source_path, batch_directory)
+                detected = self.detect(input_file)
                 base_stem = Path(detected.source_stem).name or "animal_result"
                 occurrence = used_stems.get(base_stem, 0) + 1
                 used_stems[base_stem] = occurrence
@@ -230,6 +235,7 @@ class ImageProcessor:
                     BatchItemResult(
                         source_name=source_name,
                         success=True,
+                        input_file=str(input_file),
                         saved_path=result.saved_path,
                         metadata=result.metadata,
                     )
@@ -240,8 +246,20 @@ class ImageProcessor:
                     BatchItemResult(
                         source_name=source_name,
                         success=False,
+                        input_file=str(input_file),
                         error_code=exc.code,
                         message=exc.message,
+                    )
+                )
+            except OSError as exc:
+                LOGGER.warning("[BATCH] source=%s code=INVALID_IMAGE message=%s", source_name, exc)
+                items.append(
+                    BatchItemResult(
+                        source_name=source_name,
+                        success=False,
+                        input_file=str(source_path.resolve()),
+                        error_code="INVALID_IMAGE",
+                        message=str(exc),
                     )
                 )
             finally:

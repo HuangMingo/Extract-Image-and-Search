@@ -30,7 +30,7 @@ Lần chạy đầu tiên cần Internet để tải `yolov8s-worldv2.pt` và ch
 python run.py
 ```
 
-Giao diện hiện tại là một trang truy vấn duy nhất. Chọn ảnh, điều chỉnh Top-K/metric nếu cần và nhấn **Trích xuất đặc trưng & tìm kiếm**. Kết quả được chia thành hai tab nội dung: danh sách ảnh tương đồng và chi tiết bốn vector/biểu đồ đặc trưng. Xem [FEATURE_UI_PROGRESS.md](FEATURE_UI_PROGRESS.md) để biết kiểm thử và hạn chế.
+Giao diện hiện tại là một trang truy vấn duy nhất. Chọn ảnh, điều chỉnh Top-K/metric nếu cần và nhấn **Trích xuất đặc trưng & tìm kiếm**. Kết quả được chia thành hai tab nội dung: danh sách ảnh tương đồng và chi tiết năm vector/biểu đồ đặc trưng. Xem [FEATURE_UI_PROGRESS.md](FEATURE_UI_PROGRESS.md) để biết kiểm thử và hạn chế.
 
 Trình duyệt sẽ mở giao diện tại địa chỉ Gradio hiển thị trong terminal. Quy trình sử dụng:
 
@@ -47,7 +47,7 @@ Trình duyệt sẽ mở giao diện tại địa chỉ Gradio hiển thị tron
 4. Nhấn **Tìm ảnh tương đồng**. Lần đầu hệ thống cần khoảng vài giây để lập chỉ mục 129 ảnh trong `public` và fit PCA 128 chiều.
 5. Xem ảnh đã chuẩn hóa 512×512, lưới kết quả và JSON chứa điểm tổng hợp, điểm PCA cùng bốn điểm thành phần.
 
-Pipeline tìm kiếm giữ đúng cấu hình báo cáo: HSV toàn mặt 288 chiều, HSV lưới 2×2 có 1.152 chiều, LBP lưới 4×4 có 160 chiều và HOG có 1.764 chiều. Vector hợp nhất có 3.364 chiều với trọng số tương ứng 0,15 / 0,25 / 0,25 / 0,35. Phiên bản local dùng chỉ mục trong bộ nhớ; PostgreSQL/pgvector là bước triển khai sau.
+Pipeline tìm kiếm dùng HSV toàn mặt 288 chiều, HSV lưới 2×2 có 1.152 chiều, LBP lưới 4×4 có 160 chiều, HOG có 1.764 chiều và Gabor đa tỉ lệ/đa hướng lưới 4×4 có 512 chiều. Vector hợp nhất có 3.876 chiều với trọng số tương ứng 0,05 / 0,15 / 0,15 / 0,15 / 0,50. Báo cáo JSON tìm kiếm có `input_file` là đường dẫn tuyệt đối ổn định của ảnh đầu vào; `report.json` của batch cũng ghi thuộc tính này cho từng ảnh. Nếu ảnh được tải lên từ trình duyệt, ứng dụng lưu bản sao theo mã nội dung trong thư mục `input_files` vì trình duyệt không cung cấp đường dẫn gốc trên máy và bản tạm của Gradio có thể bị xóa. Phiên bản local dùng chỉ mục trong bộ nhớ; PostgreSQL/pgvector là bước triển khai sau.
 
 ### Xử lý cả thư mục
 

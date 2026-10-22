@@ -86,7 +86,7 @@ def _on_image_change(image_path: str | None, settings: Settings, request: gr.Req
 
 
 def _empty_outputs():
-    return (None, [], "", None, "", None, "", None, "", None, "", None)
+    return (None, [], "", None, "", None, "", None, "", None, "", None, "", None)
 
 
 def _analyze(
@@ -128,6 +128,8 @@ def _analyze(
         charts["lbp_spatial"].summary_markdown,
         charts["hog"].dataframe,
         charts["hog"].summary_markdown,
+        charts["gabor_spatial"].dataframe,
+        charts["gabor_spatial"].summary_markdown,
         output.feature_result,
         gr.Slider(maximum=max(0, charts["hog"].dimension - 1), value=0),
         f"Hoàn tất · tiền xử lý: **{output.preprocessing}** · {len(output.gallery)} kết quả tương đồng.",
@@ -241,11 +243,19 @@ def build_ui(output_directory: str | Path | None = None, settings: Settings | No
                                     x="Chỉ số", y="Giá trị", title="HOG", x_title="Chỉ số phần tử",
                                     y_title="Giá trị L2", tooltip="all", height=330,
                                 )
+                            with gr.Column(elem_classes="chart-card"):
+                                gabor_meta = gr.Markdown()
+                                gabor_plot = gr.LinePlot(
+                                    x="Chỉ số", y="Giá trị", color="Vùng",
+                                    title="Gabor Texture · lưới 4×4",
+                                    x_title="Chỉ số vector ghép", y_title="Giá trị L2",
+                                    tooltip="all", height=330,
+                                )
 
         analysis_outputs = [
             normalized, gallery, details_json, hsv_global_plot, hsv_global_meta,
             hsv_spatial_plot, hsv_spatial_meta, lbp_plot, lbp_meta, hog_plot, hog_meta,
-            feature_state, hog_start, status,
+            gabor_plot, gabor_meta, feature_state, hog_start, status,
         ]
         extract_event = extract_button.click(
             analyze_from_ui,
@@ -261,7 +271,7 @@ def build_ui(output_directory: str | Path | None = None, settings: Settings | No
             outputs=[
                 normalized, gallery, details_json, hsv_global_plot, hsv_global_meta,
                 hsv_spatial_plot, hsv_spatial_meta, lbp_plot, lbp_meta, hog_plot, hog_meta,
-                feature_state,
+                gabor_plot, gabor_meta, feature_state,
             ],
             queue=False,
         )

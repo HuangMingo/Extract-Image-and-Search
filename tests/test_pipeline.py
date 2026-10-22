@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import io
+import json
 from dataclasses import replace
 from pathlib import Path
 import tempfile
 import unittest
 import zipfile
+from unittest.mock import patch
 
 from PIL import Image, ImageDraw
 
@@ -13,6 +15,7 @@ from app.config import Settings
 from app.services.detector import Detection
 from app.services.image_processor import ImageProcessor, ProcessingError
 from app.utils.image_utils import center_without_resize, expand_bbox, resize_and_center
+from app.utils.input_files import preserve_uploaded_input
 from app.utils.validation import ImageValidationError, load_validated_image
 
 
@@ -56,6 +59,22 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(image.size, (320, 180))
         with self.assertRaises(ImageValidationError):
             load_validated_image(b"not an image", self.settings)
+
+    def test_gradio_temporary_upload_is_copied_to_stable_input_path(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            gradio_root = root / "gradio"
+            upload = gradio_root / "request-id" / "snow_leopard_045.jpg"
+            upload.parent.mkdir(parents=True)
+            upload.write_bytes(image_bytes())
+
+            with patch("app.utils.input_files.tempfile.gettempdir", return_value=str(root)):
+                stable = preserve_uploaded_input(upload, root / "output")
+
+            self.assertTrue(stable.is_file())
+            self.assertEqual(stable.name, upload.name)
+            self.assertNotEqual(stable, upload.resolve())
+            self.assertEqual(stable.read_bytes(), upload.read_bytes())
 
     def test_bbox_padding_is_clamped(self):
         self.assertEqual(expand_bbox((0, 10, 100, 90), (120, 100), 0.1), (0, 2, 110, 98))
@@ -147,6 +166,13 @@ class PipelineTests(unittest.TestCase):
                 self.assertEqual(
                     set(archive.namelist()),
                     {"animal.png", "animal_2.png", "report.json"},
+                )
+                report = json.loads(archive.read("report.json"))
+                self.assertEqual(
+                    report["items"][0]["input_file"], str(first_image.resolve())
+                )
+                self.assertEqual(
+                    report["items"][1]["input_file"], str(second_image.resolve())
                 )
 
     def test_batch_uses_full_image_when_yolo_finds_nothing(self):
